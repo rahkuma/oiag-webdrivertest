@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd">
+<suite name="Failed suite [Default suite]">
+  <test name="Default test(failed)">
+    <classes>
+      <class name="com.tibco.automation.oiag.test.forwarders.UdpForwarderTestSuite">
+        <methods>
+          <include name="setup"/>
+          <include name="setUp"/>
+          <include name="afterMethod"/>
+          <include name="addTcpForwarder"/>
+          <include name="afterSuit"/>
+          <include name="afterTest"/>
+          <include name="afterClass"/>
+          <include name="setupSuit"/>
+          <include name="setupMethod"/>
+        </methods>
+      </class> <!-- com.tibco.automation.oiag.test.forwarders.UdpForwarderTestSuite -->
+    </classes>
+  </test> <!-- Default test(failed) -->
+</suite> <!-- Failed suite [Default suite] -->

@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<project basedir="." default="runtests" name="TestAutomation"> 
+
+	<property name="browser" value="C:\Program Files (x86)\Mozilla Firefox\firefox.exe" />
+	<property name="bin.dir" value="${basedir}/bin" />
+	<property name="lib.dir" value="${basedir}/lib" />
+	<property name="server.dir" value="${basedir}\\server" />
+	<property name="src.dir" value="${basedir}/src" />
+	<property name="testng.suite.file" value="testng.xml" />
+	<property file="scripts/seleniumtestrunner.properties" />
+	<property file="resources/application.properties" />
+	<property environment="env" />
+	<property name="debuglevel" value="source,lines,vars" />
+	<property name="target" value="1.8" />
+	<property name="source" value="1.8" />
+	<property name="invocation.sufix" value="" />
+	<property name="rerun.failed.test" value="" />
+
+	<tstamp>
+		<format property="run.time" pattern="dd_MMM_yyyy_hh_mm_aa" />
+	</tstamp>
+
+	<!-- - - - - - - - - - - - - - - - - - 
+          target: for-test                      
+         - - - - - - - - - - - - - - - - - -->
+	<target name="for-test">
+		<echo>${run.time}</echo>
+		<echo>${env.test.results.dir}</echo>
+	</target>
+	<property name="name" location="" />
+
+	<path id="seleniumautomation.classpath">
+		<pathelement path="${lib.dir}" />
+		<fileset dir="${lib.dir}">
+			<include name="*.jar" />
+			<include name="**/*.jar" />
+		</fileset>
+		<fileset dir="${basedir}/server">
+			<include name="*.jar" />
+			<include name="**/*.jar" />
+		</fileset>
+	</path>
+
+	<taskdef resource="net/sf/antcontrib/antcontrib.properties" classpathref="seleniumautomation.classpath">
+	</taskdef>
+
+	<target name="init">
+		<mkdir dir="bin" />
+		<copy includeemptydirs="false" todir="${bin.dir}">
+			<fileset dir="${src.dir}">
+				<exclude name="**/*.ucls" />
+				<exclude name="**/*.java" />
+			</fileset>
+		</copy>
+	</target>
+	<target name="clean">
+		<delete dir="bin" />
+		<delete file="${lib.dir}/selenium-test.jar" failonerror="false">
+		</delete>
+	</target>
+	<target depends="build-project" name="build" />
+	<target depends="init" name="build-project">
+		<echo message="${ant.project.name}: ${ant.file}" />
+		<javac debug="true" destdir="${bin.dir}" source="${source}" target="${target}" includeantruntime="false">
+			<src path="${src.dir}" />
+			<classpath refid="seleniumautomation.classpath" />
+		</javac>
+	</target>
+
+	<!-- ================================= 
+          target: make-jar              
+         ================================= -->
+	<target name="make-jar" depends="clean, build-project" description="Jar test classes">
+		<jar destfile="${lib.dir}/selenium-test.jar" basedir="${bin.dir}" />
+	</target>
+	<target name="gendoc">
+		<javadoc packagenames="com.**.test.*" sourcepath="${src.dir}" destdir="docs/tests" verbose="true" author="true" version="true" use="true" windowtitle="Test Automation API" classpathref="seleniumautomation.classpath">
+			<doctitle>
+				<![CDATA[<h1>Test Automation API</h1>]]></doctitle>
+		<bottom>
+			<![CDATA[<i>Copyright &#169; Tibco Software. All Rights Reserved.</i>]]></bottom>
+</javadoc>
+</target>
+
+<target name="stop-server">
+<get taskname="selenium-shutdown" src="http://${server.host}:${server.port}/selenium-server/driver/?cmd=shutDownSeleniumServer" dest="result.txt" ignoreerrors="true" />
+<echo taskname="selenium-shutdown" message="DGF Errors during shutdown are expected" />
+</target>
+
+<target name="start-server">
+<echo>basedir : ${basedir}</echo>
+<echo>server.dir : ${server.dir}</echo>
+<parallel failonany="true">
+	<sequential>
+		<exec executable="cmd" spawn="true">
+			<arg value="/c" />
+			<arg value="java -jar ${server.dir}\\selenium-server-standalone-2.53.1.jar" />
+			<arg value="-port=${server.port}" />
+			<arg value="-Dwebdriver.chrome.driver=${server.dir}\\chromedriver.exe" />
+			<arg value="-Dwebdriver.ie.driver=${server.dir}\\IEDriverServer.exe" />
+		</exec>
+	</sequential>
+	<sequential>
+		<waitfor checkevery="10" checkeveryunit="second" maxwait="1" maxwaitunit="minute">
+			<socket server="localhost" port="4444" />
+		</waitfor>
+	</sequential>
+</parallel>
+</target>
+
+
+<target name="rerun">
+<echo>${output.dir} ${count}</echo>
+<if>
+	<available file="${output.dir}/testng-failed.xml" />
+	<then>
+		<var name="testng.suite.file" unset="true" />
+		<property name="testng.suite.file" value="${output.dir}/testng-failed.xml" />
+		<var name="invocation.sufix" unset="true" />
+		<property name="invocation.sufix" value="/rerun-${count}" />
+		<antcall target="${caller.target}" />
+	</then>
+</if>
+</target>
+
+<target name="runtests" depends="make-jar">
+<antcall target="start-server" />
+<echo>${testng.suite.file}</echo>
+<echo>${invocation.sufix}</echo>
+<var name="output.dir" value="${test.results.dir}/${run.time}${invocation.sufix}" />
+
+<taskdef resource="testngtasks" classpathref="seleniumautomation.classpath" />
+<testng classpathref="seleniumautomation.classpath" outputDir="${output.dir}" useDefaultListeners="true" listeners="org.uncommons.reportng.HTMLReporter,com.tibco.automation.loglogic.common.listeners.Listeners,org.uncommons.reportng.JUnitXMLReporter">
+
+	<!--xmlfileset dir="${test.conf.dir}" includes="${testng.suite.file}" /-->
+	<xmlfileset file="${testng.suite.file}" erroronmissingdir="false" />
+	<jvmarg value="-ea" />
+	<sysproperty key="org.uncommons.reportng.title" value="${report.title}" />
+	<sysproperty key="org.uncommons.reportng.escape-output" value="false" />
+	<!--sysproperty key="outputDir" value="${output.dir}" /-->
+	<sysproperty key="report.dir" value="${output.dir}/html" />
+	<sysproperty key="report.screenshots.dir" value="${report.dir}/img" />
+	<!--sysproperty key="selenium.screenshots.relative.path" value="../img" /-->
+	<sysproperty key="log4j.configuration" value="file:///${lib.dir}/log4j.properties" />
+	<sysproperty key="webdriver.ie.driver" value="${server.dir}/IEDriverServer.exe" />
+	<sysproperty key="webdriver.chrome.driver" value="${server.dir}/chromedriver.exe" />
+	<propertyset>
+		<propertyref builtin="commandline" />
+	</propertyset>
+
+</testng>
+
+<available file="${output.dir}/html/index.html" type="file" property="result.present" />
+<antcall target="openReport" />
+<if>
+	<not>
+		<equals arg1="${caller.target}" arg2="runtests">
+		</equals>
+	</not>
+	<then>
+		<var name="caller.target" value="runtests" />
+		<foreach list="${rerun.failed.test}" target="rerun" param="count" />
+	</then>
+</if>
+<antcall target="stop-server" />
+</target>
+
+<target name="openReport" if="result.present">
+<exec executable="${browser}" spawn="yes">
+	<arg line="'${output.dir}\html\index.html'" />
+</exec>
+</target>
+</project>

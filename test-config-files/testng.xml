@@ -1,0 +1,16 @@
+<!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd" >
+<suite name="Hawk Suite" verbose="1">
+	<test name="Hawk BAT Test Cases I">
+		<packages>
+			
+ 		<package name="com.tibco.automation.hawk.test.homePage"></package>
+		<package name="com.tibco.automation.hawk.test.alerts"></package>	 
+		<package name="com.tibco.automation.hawk.test.dashboard"></package>		
+		<package name="com.tibco.automation.hawk.test.rulebase"></package>
+		<package name="com.tibco.automation.hawk.test.schedule"></package> 
+		<package name="com.tibco.automation.hawk.test.microagents"></package>
+		
+		</packages>
+	</test>
+</suite>
+		

@@ -1,0 +1,28 @@
+set terminalIP [lindex $argv 0]
+set user [lindex $argv 1]
+set password [lindex $argv 2]
+set configuration [lindex $argv 3]
+
+proc show {terminalIP user password configuration} {
+	spawn telnet $terminalIP 23
+	send "\n"
+	expect "login: "
+	send "$user\n"
+	expect "Password: "
+	send "$password\n"
+	expect "> "
+	send "show $configuration\n"
+	sleep 3
+	expect "> "
+	send "exit\n"
+	sleep 3
+	expect "login: "
+	send \035
+	sleep 3
+	expect "> "
+	send "quit\n"
+	expect eof
+	exit 0
+}
+
+puts [show $terminalIP $user $password $configuration]

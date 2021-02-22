@@ -1,0 +1,29 @@
+set terminalIP [lindex $argv 0]
+set user [lindex $argv 1]
+set password [lindex $argv 2]
+
+proc get_sshd_process {terminalIP user password} {
+	spawn telnet $terminalIP 23
+	send "\n"
+	expect "login: "
+	send "$user\n"
+	expect "Password: "
+	send "$password\n"
+	expect "$ "
+	send "ll /etc/rc.d/rc3.d/S80sshd > /tmp/result\n"
+	# expect -re "lr.*/sshd" { set temp $expect_out(0,string) }
+	sleep 3
+	expect "$ "
+	send "exit\n"
+	sleep 3
+	expect "login: "
+	send \035
+	sleep 3
+	expect "> "
+	send "quit\n"
+	#return $temp
+	expect eof
+	exit 0
+}
+
+get_sshd_process $terminalIP $user $password
